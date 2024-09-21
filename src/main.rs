@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, ops::{Deref, Not}};
 
 use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
@@ -49,12 +49,12 @@ struct TaskDetails {
 fn main() {
     // Checks if the local JSON file is there
     let file_string = fs::read_to_string("db.json");
-    let tasks: HashMap<usize, TaskDetails> = match &file_string {
+    let mut tasks: HashMap<usize, TaskDetails> = match &file_string {
         Ok(some_string) => {
             // If it can be deserialised
             match serde_json::from_str::<Vec<Task>>(some_string) {
                 Ok(deserialized_tasks) => {
-                    let tasks_map: HashMap<usize, TaskDetails> = HashMap::new();
+                    let mut tasks_map: HashMap<usize, TaskDetails> = HashMap::new();
                     for x in deserialized_tasks.into_iter() {
                         tasks_map.insert(x.id, TaskDetails { description: x.description, status: x.status });
                     }
@@ -74,9 +74,21 @@ fn main() {
     match &cli.command {
         Commands::Add { description } => {
             println!("Adding task: {}", description);
+            for i in 0..usize::max_value() {
+                if tasks.contains_key(&i) {
+                    continue;
+                };
+                tasks.insert(i, TaskDetails { description: description.to_string(), status: None });
+            }
         }
         Commands::Update { id, description } => {
-            println!("Updating task {} with new description: {}", id, description);
+            // find the id
+            match tasks.get_mut(id) {
+                Some(value) => {
+                    value.description = description.to_string()
+                },
+                None => println!("Some Error")
+            }
         }
         Commands::Delete { id } => {
             println!("Deleting task: {}", id);
