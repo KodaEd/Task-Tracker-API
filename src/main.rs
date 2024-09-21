@@ -2,7 +2,8 @@ use std::fs;
 
 use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
-use serde_json::Result;
+use std::collections::HashMap;
+
 
 #[derive(Parser)]
 struct Cli {
@@ -39,21 +40,33 @@ struct Task {
     status: Option<String>
 }
 
+#[derive(Clone)]
+struct TaskDetails {
+    description: String,
+    status: Option<String>
+}
+
 fn main() {
     // Checks if the local JSON file is there
     let file_string = fs::read_to_string("db.json");
-    let _tasks: Vec<Task> = match &file_string {
+    let tasks: HashMap<usize, TaskDetails> = match &file_string {
         Ok(some_string) => {
             // If it can be deserialised
-            match serde_json::from_str(some_string) {
-                Ok(deserialized_tasks) => deserialized_tasks,
+            match serde_json::from_str::<Vec<Task>>(some_string) {
+                Ok(deserialized_tasks) => {
+                    let tasks_map: HashMap<usize, TaskDetails> = HashMap::new();
+                    for x in deserialized_tasks.into_iter() {
+                        tasks_map.insert(x.id, TaskDetails { description: x.description, status: x.status });
+                    }
+                    tasks_map
+                },
                 Err(..) => {
                     println!("Failed to deserialize tasks, Creating a new database");
-                    Vec::new()
+                    HashMap::new()
                 }
             }
         }
-        Err(..) => Vec::new(),
+        Err(..) => HashMap::new(),
     };
 
     // Get the args of the program
