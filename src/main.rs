@@ -121,4 +121,14 @@ fn main() {
             }
         }
     }
+
+    // Putting it back into json
+    // Make it into a vec of values
+    let mut result: Vec<Task> = Vec::new();
+    for (key, value) in &tasks {
+        result.push(Task{id: *key, description: value.description.clone(), status: value.status.clone()});
+    }
+
+    let result_string = serde_json::to_string(&result)?;
+    fs::write("db.json", result_string);
 }
