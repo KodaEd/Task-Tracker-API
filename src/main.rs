@@ -40,7 +40,7 @@ struct Task {
     status: Option<String>
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct TaskDetails {
     description: String,
     status: Option<String>
@@ -114,10 +114,10 @@ fn main() {
             }
         }
         Commands::List { status } => {
-            if let Some(status) = status {
-                println!("Listing tasks with status: {:?}", status);
-            } else {
-                println!("Listing all tasks");
+            for (key, value) in &tasks {
+                if *status == value.status {
+                    println!("{} {:?}", key, value)
+                }
             }
         }
     }
