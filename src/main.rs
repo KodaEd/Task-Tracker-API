@@ -91,7 +91,11 @@ fn main() {
             }
         }
         Commands::Delete { id } => {
-            println!("Deleting task: {}", id);
+            if tasks.contains_key(id) {
+                tasks.remove(id);
+            } else {
+                println!("Id not found");
+            }
         }
         Commands::MarkInProgress { id } => {
             println!("Marking task {} as in progress", id);
