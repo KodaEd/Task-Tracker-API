@@ -98,10 +98,20 @@ fn main() {
             }
         }
         Commands::MarkInProgress { id } => {
-            println!("Marking task {} as in progress", id);
+            match tasks.get_mut(id) {
+                Some(value) => {
+                    value.status = Some("In Progress".to_string())
+                },
+                None => println!("Some Error")
+            }
         }
         Commands::MarkDone { id } => {
-            println!("Marking task {} as done", id);
+            match tasks.get_mut(id) {
+                Some(value) => {
+                    value.status = Some("Done".to_string())
+                },
+                None => println!("Some Error")
+            }
         }
         Commands::List { status } => {
             if let Some(status) = status {
