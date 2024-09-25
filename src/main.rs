@@ -1,4 +1,4 @@
-use std::{fs, ops::{Deref, Not}};
+use std::{fs, ops::Not};
 
 use clap::{Parser, Subcommand};
 use serde::{Deserialize, Serialize};
@@ -30,36 +30,40 @@ enum Commands {
         id: usize
     },
     List {
-        status: Option<String>
+        status: String
     },
 }
 #[derive(Clone, Serialize, Deserialize)]
 struct Task {
     id: usize,
     description: String,
-    status: Option<String>
+    status: String
 }
 
 #[derive(Clone, Debug)]
 struct TaskDetails {
     description: String,
-    status: Option<String>
+    status: String
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Checks if the local JSON file is there
     let file_string = fs::read_to_string("db.json");
+
+    // Brings all the tasks into a hash map for quicker and easier updating
     let mut tasks: HashMap<usize, TaskDetails> = match &file_string {
         Ok(some_string) => {
             // If it can be deserialised
             match serde_json::from_str::<Vec<Task>>(some_string) {
                 Ok(deserialized_tasks) => {
                     let mut tasks_map: HashMap<usize, TaskDetails> = HashMap::new();
+                    // Placing all the info into the map
                     for x in deserialized_tasks.into_iter() {
                         tasks_map.insert(x.id, TaskDetails { description: x.description, status: x.status });
                     }
                     tasks_map
                 },
+                // Default case for an error with the reading.
                 Err(..) => {
                     println!("Failed to deserialize tasks, Creating a new database");
                     HashMap::new()
@@ -74,11 +78,13 @@ fn main() {
     match &cli.command {
         Commands::Add { description } => {
             println!("Adding task: {}", description);
-            for i in 0..usize::max_value() {
+            // Finds the first available id.
+            for i in 0.. {
                 if tasks.contains_key(&i) {
                     continue;
                 };
-                tasks.insert(i, TaskDetails { description: description.to_string(), status: None });
+                tasks.insert(i, TaskDetails { description: description.to_string(), status: String::from("Todo") });
+                break;
             }
         }
         Commands::Update { id, description } => {
@@ -100,7 +106,7 @@ fn main() {
         Commands::MarkInProgress { id } => {
             match tasks.get_mut(id) {
                 Some(value) => {
-                    value.status = Some("In Progress".to_string())
+                    value.status = String::from("In Progress")
                 },
                 None => println!("Some Error")
             }
@@ -108,12 +114,16 @@ fn main() {
         Commands::MarkDone { id } => {
             match tasks.get_mut(id) {
                 Some(value) => {
-                    value.status = Some("Done".to_string())
+                    value.status = String::from("Done")
                 },
                 None => println!("Some Error")
             }
         }
         Commands::List { status } => {
+            if (*status == String::from("in-progress") || *status == String::from("todo") || *status == String::from("done")).not() {
+                println!("Error");
+            }
+
             for (key, value) in &tasks {
                 if *status == value.status {
                     println!("{} {:?}", key, value)
@@ -121,6 +131,8 @@ fn main() {
             }
         }
     }
+
+    println!("Reached here!");
 
     // Putting it back into json
     // Make it into a vec of values
@@ -130,5 +142,7 @@ fn main() {
     }
 
     let result_string = serde_json::to_string(&result)?;
-    fs::write("db.json", result_string);
+    fs::write("db.json", result_string)?;
+
+    Ok(())
 }
